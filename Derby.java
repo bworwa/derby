@@ -13,7 +13,6 @@ public class Derby {
 
 	private String driver = "org.apache.derby.jdbc.EmbeddedDriver";
 	private String protocol = "jdbc:derby:";
-	private String dbName = null;
 
 	private Connection connection = null;
 	private Statement statement = null;
@@ -31,8 +30,6 @@ public class Derby {
 			System.err.println("\nCould not connect to database '" + dbName + "'");
 
 		}
-		
-		this.dbName = dbName;
 
 	}
 
@@ -67,118 +64,119 @@ public class Derby {
 			System.err.println("\nUnable to instantiate the JDBC driver " + driver);
 
 		} catch (IllegalAccessException exception) {
-			
+
 			System.err.println("\nNot allowed to access the JDBC driver " + driver);
-			
+
 		}
 	}
 	
 	public void executeDDL(String query) {
-		
+
 		try {
-			
+
 			this.statement = this.connection.createStatement();
-			
-			this.statement.execute(query);
-			
-			this.statement.close();			
-			
+
+			this.statement.executeUpdate(query);
+
+			this.statement.close();
+
 		} catch (SQLException exception) {
 
 			exception.printStackTrace();
 
 		}
-		
+
 	}
-	
+
 	public List<HashMap<String, String>> executeDML(String query) {
-		
+
 		List<HashMap<String, String>> resultList = new LinkedList<HashMap<String, String>>();
-		
+
 		try {
-			
+
 			this.statement = this.connection.createStatement();
-			
+
 			ResultSet result = this.statement.executeQuery(query);			
-						
+
 			if(result.next()) {
-				
+
 				ResultSetMetaData columns = result.getMetaData();
-				
+
 				do {
-					
+
 					HashMap<String, String> row = new HashMap<String, String>();
-					
+
 					for(int index = 0; index < columns.getColumnCount(); index++)
-					
+
 						row.put(columns.getColumnName(index + 1).toLowerCase(), result.getString(index + 1));
-						
+
 					resultList.add(row);
-					
+
 				} while(result.next());
-		
+
 			}
-			
+
 			result.close();
-			
+
 			this.statement.close();
-			
+
 		} catch (SQLException exception) {
 
 			exception.printStackTrace();
-			
+
 			resultList = null;
 
 		}
-		
+
 		return resultList;
-		
+
 	}
-	
+
 	public boolean tableExists(String tableNamePattern) {
-		
+
 		boolean exists = false;
-		
+
 		try {
-			
+
 			DatabaseMetaData metaData = this.connection.getMetaData();
-			
+
 			ResultSet result = metaData.getTables(null, "APP", tableNamePattern.toUpperCase(), null);
-			 
+
 			if(result.next())
-				 
+
 				exists = true;
-			
+
 			result.close();
-			
+
 		} catch (SQLException exception) {
-			
+
 			exception.printStackTrace();
-			
+
 		}
-		
+
 		return exists;
-		
+
 	}
 	
 	public void close() {
 		
 		try {
-			
+
 			this.connection.close();
+
 			DriverManager.getConnection(this.protocol + ";shutdown=true");
-			
+
 		} catch (SQLException exception) {
 
-            if (exception.getErrorCode() == 50000 && "XJ015".equals(exception.getSQLState())) {
+			if (exception.getErrorCode() == 50000 && "XJ015".equals(exception.getSQLState())) {
 
-            	// we got the expected exception
+				// we got the expected exception
 
-            } else {
-            	
-                System.err.println("Derby did not shut down normally");
-                
-            }
+			} else {
+
+				System.err.println("Derby did not shut down normally");
+
+			}
 		}		
 	}
 }
